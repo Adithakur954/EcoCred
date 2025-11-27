@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "ecocred",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
