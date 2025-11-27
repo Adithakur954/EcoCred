@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Backend - PostgreSQL Schema Designer</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .code-block {
+            background: #1e293b;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .code-header {
+            background: #334155;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .code-content {
+            padding: 16px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .keyword { color: #c084fc; }
+        .type { color: #22d3ee; }
+        .string { color: #a3e635; }
+        .comment { color: #64748b; }
+        .table-name { color: #fb923c; }
+        .constraint { color: #f472b6; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="bg-gradient-to-br from-blue-500 to-purple-600 p-2 rounded-lg">
+                        <i class="fas fa-database text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold">IoT Backend Schema</h1>
+                        <p class="text-gray-400 text-sm">PostgreSQL + Node.js</p>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="copyAllSQL()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg flex items-center gap-2 transition">
+                        <i class="fas fa-copy"></i> Copy All SQL
+                    </button>
+                    <button onclick="downloadSQL()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg flex items-center gap-2 transition">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Overview Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <div class="flex items-center gap-4">
+                    <div class="bg-blue-500/20 p-3 rounded-lg">
+                        <i class="fas fa-users text-blue-400 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold">Users Table</h3>
+                        <p class="text-gray-400 text-sm">Authorization & Auth</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <div class="flex items-center gap-4">
+                    <div class="bg-green-500/20 p-3 rounded-lg">
+                        <i class="fas fa-microchip text-green-400 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold">Devices Table</h3>
+                        <p class="text-gray-400 text-sm">Status: Running/Off</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <div class="flex items-center gap-4">
+                    <div class="bg-purple-500/20 p-3 rounded-lg">
+                        <i class="fas fa-chart-line text-purple-400 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold">Device Data</h3>
+                        <p class="text-gray-400 text-sm">IoT Sensor Data</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schema Diagram -->
+        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 mb-8">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                <i class="fas fa-project-diagram text-blue-400"></i>
+                Entity Relationship Diagram
+            </h2>
+            <div class="flex flex-wrap justify-center gap-8 items-start">
+                <!-- Users Table -->
+                <div class="bg-gray-900 rounded-lg border border-blue-500 min-w-64">
+                    <div class="bg-blue-500 px-4 py-2 rounded-t-lg font-bold flex items-center gap-2">
+                        <i class="fas fa-users"></i> users
+                    </div>
+                    <div class="p-4 space-y-2 text-sm">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-key text-yellow-400"></i>
+                            <span class="text-yellow-400">id</span>
+                            <span class="text-gray-500">UUID PK</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-at text-gray-400"></i>
+                            <span>email</span>
+                            <span class="text-gray-500">VARCHAR UNIQUE</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-user text-gray-400"></i>
+                            <span>username</span>
+                            <span class="text-gray-500">VARCHAR UNIQUE</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-lock text-gray-400"></i>
+                            <span>password_hash</span>
+                            <span class="text-gray-500">VARCHAR</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-shield text-gray-400"></i>
+                            <span>role</span>
+                            <span class="text-gray-500">VARCHAR</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-clock text-gray-400"></i>
+                            <span>created_at</span>
+                            <span class="text-gray-500">TIMESTAMP</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Arrow -->
+                <div class="hidden md:flex items-center text-gray-500 text-4xl self-center">
+                    <span class="text-sm mr-2">1</span>→<span class="text-sm ml-2">N</span>
+                </div>
+
+                <!-- Devices Table -->
+                <div class="bg-gray-900 rounded-lg border border-green-500 min-w-64">
+                    <div class="bg-green-500 px-4 py-2 rounded-t-lg font-bold flex items-center gap-2 text-gray-900">
+                        <i class="fas fa-microchip"></i> devices
+                    </div>
+                    <div class="p-4 space-y-2 text-sm">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-key text-yellow-400"></i>
+                            <span class="text-yellow-400">id</span>
+                            <span class="text-gray-500">UUID PK</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-link text-blue-400"></i>
+                            <span class="text-blue-400">user_id</span>
+                            <span class="text-gray-500">UUID FK</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-tag text-gray-400"></i>
+                            <span>device_name</span>
+                            <span class="text-gray-500">VARCHAR</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-fingerprint text-gray-400"></i>
+                            <span>device_key</span>
+                            <span class="text-gray-500">VARCHAR UNIQUE</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-power-off text-gray-400"></i>
+                            <span>status</span>
+                            <span class="text-gray-500">ENUM</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-wifi text-gray-400"></i>
+                            <span>last_seen</span>
+                            <span class="text-gray-500">TIMESTAMP</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Arrow -->
+                <div class="hidden md:flex items-center text-gray-500 text-4xl self-center">
+                    <span class="text-sm mr-2">1</span>→<span class="text-sm ml-2">N</span>
+                </div>
+
+                <!-- Device Data Table -->
+                <div class="bg-gray-900 rounded-lg border border-purple-500 min-w-64">
+                    <div class="bg-purple-500 px-4 py-2 rounded-t-lg font-bold flex items-center gap-2">
+                        <i class="fas fa-chart-line"></i> device_data
+                    </div>
+                    <div class="p-4 space-y-2 text-sm">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-key text-yellow-400"></i>
+                            <span class="text-yellow-400">id</span>
+                            <span class="text-gray-500">BIGSERIAL PK</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-link text-green-400"></i>
+                            <span class="text-green-400">device_id</span>
+                            <span class="text-gray-500">UUID FK</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-database text-gray-400"></i>
+                            <span>payload</span>
+                            <span class="text-gray-500">JSONB</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-calendar text-gray-400"></i>
+                            <span>recorded_at</span>
+                            <span class="text-gray-500">TIMESTAMP</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SQL Code Blocks -->
+        <div class="space-y-6">
+            <!-- Users Table SQL -->
+            <div class="code-block" id="users-sql">
+                <div class="code-header">
+                    <span class="flex items-center gap-2">
+                        <i class="fas fa-users text-blue-400"></i>
+                        1. Users Table (Authorization)
+                    </span>
+                    <button onclick="copyCode('users')" class="text-gray-400 hover:text-white transition">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <div class="code-content text-gray-300">
+<pre><span class="comment">-- Enable UUID extension</span>
+<span class="keyword">CREATE EXTENSION IF NOT EXISTS</span> <span class="string">"uuid-ossp"</span>;
+
+<span class="comment">-- Users table for authentication and authorization</span>
+<span class="keyword">CREATE TABLE</span> <span class="table-name">users</span> (
+    <span class="type">id</span>              <span class="type">UUID</span> <span class="constraint">PRIMARY KEY DEFAULT</span> uuid_generate_v4(),
+    <span class="type">email</span>           <span class="type">VARCHAR(255)</span> <span class="constraint">UNIQUE NOT NULL</span>,
+    <span class="type">username</span>        <span class="type">VARCHAR(100)</span> <span class="constraint">UNIQUE NOT NULL</span>,
+    <span class="type">password_hash</span>   <span class="type">VARCHAR(255)</span> <span class="constraint">NOT NULL</span>,
+    <span class="type">role</span>            <span class="type">VARCHAR(50)</span> <span class="constraint">DEFAULT</span> <span class="string">'user'</span>,
+    <span class="type">is_active</span>       <span class="type">BOOLEAN</span> <span class="constraint">DEFAULT</span> <span class="string">true</span>,
+    <span class="type">refresh_token</span>   <span class="type">TEXT</span>,
+    <span class="type">created_at</span>      <span class="type">TIMESTAMP WITH TIME ZONE</span> <span class="constraint">DEFAULT</span> <span class="string">CURRENT_TIMESTAMP</span>,
+    <span class="type">updated_at</span>      <span class="type">TIMESTAMP WITH TIME ZONE</span> <span class="constraint">DEFAULT</span> <span class="string">CURRENT_TIMESTAMP</span>
+);
+
+<span class="comment">-- Index for faster email lookups during login</span>
+<span class="keyword">CREATE INDEX</span> idx_users_email <span class="keyword">ON</span> <span class="table-name">users</span>(email);
+<span class="keyword">CREATE INDEX</span> idx_users_username <span class="keyword">ON</span> <span class="table-name">users</span>(username);</pre>
+                </div>
+            </div>
+
+            <!-- Devices Table SQL -->
+            <div class="code-block" id="devices-sql">
+                <div class="code-header">
+                    <span class="flex items-center gap-2">
+                        <i class="fas fa-microchip text-green-400"></i>
+                        2. Devices Table (Status: Running/Off)
+                    </span>
+                    <button onclick="copyCode('devices')" class="text-gray-400 hover:text-white transition">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <div class="code-content text-gray-300">
+<pre><span class="comment">-- Create ENUM type for device status</span>
+<span class="keyword">CREATE TYPE</span> <span class="type">device_status</span> <span class="keyword">AS ENUM</span> (<span class="string">'running'</span>, <span class="string">'off'</span>, <span class="string">'maintenance'</span>, <span class="string">'error'</span>);
+
+<span class="comment">-- Devices table with status tracking</span>
+<span class="keyword">CREATE TABLE</span> <span class="table-name">devices</span> (
+    <span class="type">id</span>              <span class="type">UUID</span> <span class="constraint">PRIMARY KEY DEFAULT</span> uuid_generate_v4(),
+    <span class="type">user_id</span>         <span class="type">UUID</span> <span class="constraint">NOT NULL REFERENCES</span> <span class="table-name">users</span>(id) <span class="constraint">ON DELETE CASCADE</span>,
+    <span class="type">device_name</span>     <span class="type">VARCHAR(255)</span> <span class="constraint">NOT NULL</span>,
+    <span class="type">device_key</span>      <span class="type">VARCHAR(255)</span> <span class="constraint">UNIQUE NOT NULL</span>,
+    <span class="type">device_type</span>     <span class="type">VARCHAR(100)</span>,
+    <span class="type">description</span>     <span class="type">TEXT</span>,
+    <span class="type">status</span>          <span class="type">device_status</span> <span class="constraint">DEFAULT</span> <span class="string">'off'</span>,
+    <span class="type">ip_address</span>      <span class="type">INET</span>,
+    <span class="type">firmware_version</span> <span class="type">VARCHAR(50)</span>,
+    <span class="type">last_seen</span>       <span class="type">TIMESTAMP WITH TIME ZONE</span>,
+    <span class="type">metadata</span>        <span class="type">JSONB</span> <span class="constraint">DEFAULT</span> <span class="string">'{}'</span>,
+    <span class="type">created_at</span>      <span class="type">TIMESTAMP WITH TIME ZONE</span> <span class="constraint">DEFAULT</span> <span class="string">CURRENT_TIMESTAMP</span>,
+    <span class="type">updated_at</span>      <span class="type">TIMESTAMP WITH TIME ZONE</span> <span class="constraint">DEFAULT</span> <span class="string">CURRENT_TIMESTAMP</span>
+);
+
+<span class="comment">-- Indexes for common queries</span>
+<span class="keyword">CREATE INDEX</span> idx_devices_user_id <span class="keyword">ON</span> <span class="table-name">devices</span>(user_id);
+<span class="keyword">CREATE INDEX</span> idx_devices_status <span class="keyword">ON</span> <span class="table-name">devices</span>(status);
+<span class="keyword">CREATE INDEX</span> idx_devices_device_key <span class="keyword">ON</span> <span class="table-name">devices</span>(device_key);</pre>
+                </div>
+            </div>
+
+            <!-- Device Data Table SQL -->
+            <div class="code-block" id="device-data-sql">
+                <div class="code-header">
+                    <span class="flex items-center gap-2">
+                        <i class="fas fa-chart-line text-purple-400"></i>
+                        3. Device Data Table (IoT Sensor Data)
+                    </span>
+                    <button onclick="copyCode('device-data')" class="text-gray-400 hover:text-white transition">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <div class="code-content text-gray-300">
+<pre><span class="comment">-- Device data table for incoming IoT sensor data</span>
+<span class="keyword">CREATE TABLE</span> <span class="table-name">device_data</span> (
+    <span class="type">id</span>              <span class="type">BIGSERIAL</span> <span class="constraint">PRIMARY KEY</span>,
+    <span class="type">device_id</span>       <span class="type">UUID</span> <span class="constraint">NOT NULL REFERENCES</span> <span class="table-name">devices</span>(id) <span class="constraint">ON DELETE CASCADE</span>,
+    <span class="type">payload</span>         <span class="type">JSONB</span> <span class="constraint">NOT NULL</span>,
+    <span class="type">temperature</span>     <span class="type">DECIMAL(5,2)</span>,
+    <span class="type">humidity</span>        <span class="type">DECIMAL(5,2)</span>,
+    <span class="type">pressure</span>        <span class="type">DECIMAL(7,2)</span>,
+    <span class="type">battery_level</span>   <span class="type">INTEGER</span>,
+    <span class="type">signal_strength</span> <span class="type">INTEGER</span>,
+    <span class="type">recorded_at</span>     <span class="type">TIMESTAMP WITH TIME ZONE</span> <span class="constraint">DEFAULT</span> <span class="string">CURRENT_TIMESTAMP</span>,
+    <span class="type">received_at</span>     <span class="type">TIMESTAMP WITH TIME ZONE</span> <span class="constraint">DEFAULT</span> <span class="string">CURRENT_TIMESTAMP</span>
+);
+
+<span class="comment">-- Indexes for time-series queries</span>
+<span class="keyword">CREATE INDEX</span> idx_device_data_device_id <span class="keyword">ON</span> <span class="table-name">device_data</span>(device_id);
+<span class="keyword">CREATE INDEX</span> idx_device_data_recorded_at <span class="keyword">ON</span> <span class="table-name">device_data</span>(recorded_at <span class="constraint">DESC</span>);
+<span class="keyword">CREATE INDEX</span> idx_device_data_device_time <span class="keyword">ON</span> <span class="table-name">device_data</span>(device_id, recorded_at <span class="constraint">DESC</span>);
+
+<span class="comment">-- GIN index for JSONB payload queries</span>
+<span class="keyword">CREATE INDEX</span> idx_device_data_payload <span class="keyword">ON</span> <span class="table-name">device_data</span> <span class="keyword">USING GIN</span>(payload);</pre>
+                </div>
+            </div>
+
+            <!-- Helper Functions SQL -->
+            <div class="code-block" id="functions-sql">
+                <div class="code-header">
+                    <span class="flex items-center gap-2">
+                        <i class="fas fa-cogs text-yellow-400"></i>
+                        4. Helper Functions & Triggers
+                    </span>
+                    <button onclick="copyCode('functions')" class="text-gray-400 hover:text-white transition">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <div class="code-content text-gray-300">
+<pre><span class="comment">-- Function to automatically update 'updated_at' timestamp</span>
+<span class="keyword">CREATE OR REPLACE FUNCTION</span> update_updated_at_column()
+<span class="keyword">RETURNS TRIGGER AS</span> $$
+<span class="keyword">BEGIN</span>
+    NEW.updated_at = <span class="string">CURRENT_TIMESTAMP</span>;
+    <span class="keyword">RETURN</span> NEW;
+<span class="keyword">END</span>;
+$$ <span class="type">language</span> <span class="string">'plpgsql'</span>;
+
+<span class="comment">-- Apply trigger to users table</span>
+<span class="keyword">CREATE TRIGGER</span> update_users_updated_at
+    <span class="keyword">BEFORE UPDATE ON</span> <span class="table-name">users</span>
+    <span class="keyword">FOR EACH ROW EXECUTE FUNCTION</span> update_updated_at_column();
+
+<span class="comment">-- Apply trigger to devices table</span>
+<span class="keyword">CREATE TRIGGER</span> update_devices_updated_at
+    <span class="keyword">BEFORE UPDATE ON</span> <span class="table-name">devices</span>
+    <span class="keyword">FOR EACH ROW EXECUTE FUNCTION</span> update_updated_at_column();
+
+<span class="comment">-- Function to update device status and last_seen on data insert</span>
+<span class="keyword">CREATE OR REPLACE FUNCTION</span> update_device_on_data_insert()
+<span class="keyword">RETURNS TRIGGER AS</span> $$
+<span class="keyword">BEGIN</span>
+    <span class="keyword">UPDATE</span> <span class="table-name">devices</span> 
+    <span class="keyword">SET</span> last_seen = <span class="string">CURRENT_TIMESTAMP</span>, 
+        status = <span class="string">'running'</span>
+    <span class="keyword">WHERE</span> id = NEW.device_id;
+    <span class="keyword">RETURN</span> NEW;
+<span class="keyword">END</span>;
+$$ <span class="type">language</span> <span class="string">'plpgsql'</span>;
+
+<span class="comment">-- Trigger to auto-update device when data is received</span>
+<span class="keyword">CREATE TRIGGER</span> on_device_data_insert
+    <span class="keyword">AFTER INSERT ON</span> <span class="table-name">device_data</span>
+    <span class="keyword">FOR EACH ROW EXECUTE FUNCTION</span> update_device_on_data_insert();</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sample Queries Section -->
+        <div class="mt-8 bg-gray-800 rounded-xl p-6 border border-gray-700">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <i class="fas fa-lightbulb text-yellow-400"></i>
+                Sample Queries for Node.js
+            </h2>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="bg-gray-900 rounded-lg p-4">
+                    <h3 class="font-semibold text-green-400 mb-2">Get all devices for a user</h3>
+                    <code class="text-sm text-gray-300">
+                        SELECT * FROM devices WHERE user_id = $1 ORDER BY created_at DESC;
+                    </code>
+                </div>
+                <div class="bg-gray-900 rounded-lg p-4">
+                    <h3 class="font-semibold text-green-400 mb-2">Get latest data for device</h3>
+                    <code class="text-sm text-gray-300">
+                        SELECT * FROM device_data WHERE device_id = $1 ORDER BY recorded_at DESC LIMIT 100;
+                    </code>
+                </div>
+                <div class="bg-gray-900 rounded-lg p-4">
+                    <h3 class="font-semibold text-green-400 mb-2">Get running devices count</h3>
+                    <code class="text-sm text-gray-300">
+                        SELECT COUNT(*) FROM devices WHERE user_id = $1 AND status = 'running';
+                    </code>
+                </div>
+                <div class="bg-gray-900 rounded-lg p-4">
+                    <h3 class="font-semibold text-green-400 mb-2">Insert device data</h3>
+                    <code class="text-sm text-gray-300">
+                        INSERT INTO device_data (device_id, payload, temperature) VALUES ($1, $2, $3);
+                    </code>
+                </div>
+            </div>
+        </div>
+
+        <!-- Node.js Integration Note -->
+        <div class="mt-8 bg-gradient-to-r from-blue-900/50 to-purple-900/50 rounded-xl p-6 border border-blue-700">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <i class="fab fa-node-js text-green-400 text-2xl"></i>
+                Node.js Integration Tips
+            </h2>
+            <ul class="space-y-2 text-gray-300">
+                <li class="flex items-start gap-2">
+                    <i class="fas fa-check text-green-400 mt-1"></i>
+                    Use <code class="bg-gray-800 px-2 py-1 rounded">pg</code> or <code class="bg-gray-800 px-2 py-1 rounded">pg-promise</code> for PostgreSQL connection
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fas fa-check text-green-400 mt-1"></i>
+                    Use <code class="bg-gray-800 px-2 py-1 rounded">bcrypt</code> for password hashing before storing
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fas fa-check text-green-400 mt-1"></i>
+                    Use <code class="bg-gray-800 px-2 py-1 rounded">jsonwebtoken</code> for JWT-based authentication
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fas fa-check text-green-400 mt-1"></i>
+                    Consider using <code class="bg-gray-800 px-2 py-1 rounded">uuid</code> package to generate device_key
+                </li>
+            </ul>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300">
+        <i class="fas fa-check-circle mr-2"></i>
+        <span id="toast-message">Copied to clipboard!</span>
+    </div>
+
+    <script>
+        // SQL content for copying
+        const sqlContent = {
+            users: `-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Users table for authentication and authorization
+CREATE TABLE users (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email           VARCHAR(255) UNIQUE NOT NULL,
+    username        VARCHAR(100) UNIQUE NOT NULL,
+    password_hash   VARCHAR(255) NOT NULL,
+    role            VARCHAR(50) DEFAULT 'user',
+    is_active       BOOLEAN DEFAULT true,
+    refresh_token   TEXT,
+    created_at      TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index for faster email lookups during login
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_username ON users(username);`,
+
+            devices: `-- Create ENUM type for device status
+CREATE TYPE device_status AS ENUM ('running', 'off', 'maintenance', 'error');
+
+-- Devices table with status tracking
+CREATE TABLE devices (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    device_name     VARCHAR(255) NOT NULL,
+    device_key      VARCHAR(255) UNIQUE NOT NULL,
+    device_type     VARCHAR(100),
+    description     TEXT,
+    status          device_status DEFAULT 'off',
+    ip_address      INET,
+    firmware_version VARCHAR(50),
+    last_seen       TIMESTAMP WITH TIME ZONE,
+    metadata        JSONB DEFAULT '{}',
+    created_at      TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for common queries
+CREATE INDEX idx_devices_user_id ON devices(user_id);
+CREATE INDEX idx_devices_status ON devices(status);
+CREATE INDEX idx_devices_device_key ON devices(device_key);`,
+
+            'device-data': `-- Device data table for incoming IoT sensor data
+CREATE TABLE device_data (
+    id              BIGSERIAL PRIMARY KEY,
+    device_id       UUID NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    payload         JSONB NOT NULL,
+    temperature     DECIMAL(5,2),
+    humidity        DECIMAL(5,2),
+    pressure        DECIMAL(7,2),
+    battery_level   INTEGER,
+    signal_strength INTEGER,
+    recorded_at     TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    received_at     TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for time-series queries
+CREATE INDEX idx_device_data_device_id ON device_data(device_id);
+CREATE INDEX idx_device_data_recorded_at ON device_data(recorded_at DESC);
+CREATE INDEX idx_device_data_device_time ON device_data(device_id, recorded_at DESC);
+
+-- GIN index for JSONB payload queries
+CREATE INDEX idx_device_data_payload ON device_data USING GIN(payload);`,
+
+            functions: `-- Function to automatically update 'updated_at' timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Apply trigger to users table
+CREATE TRIGGER update_users_updated_at
+    BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Apply trigger to devices table
+CREATE TRIGGER update_devices_updated_at
+    BEFORE UPDATE ON devices
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Function to update device status and last_seen on data insert
+CREATE OR REPLACE FUNCTION update_device_on_data_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE devices 
+    SET last_seen = CURRENT_TIMESTAMP, 
+        status = 'running'
+    WHERE id = NEW.device_id;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Trigger to auto-update device when data is received
+CREATE TRIGGER on_device_data_insert
+    AFTER INSERT ON device_data
+    FOR EACH ROW EXECUTE FUNCTION update_device_on_data_insert();`
+        };
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            toastMessage.textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function copyCode(section) {
+            navigator.clipboard.writeText(sqlContent[section]).then(() => {
+                showToast(`${section} SQL copied to clipboard!`);
+            });
+        }
+
+        function copyAllSQL() {
+            const allSQL = Object.values(sqlContent).join('\n\n-- =====================\n\n');
+            navigator.clipboard.writeText(allSQL).then(() => {
+                showToast('All SQL copied to clipboard!');
+            });
+        }
+
+        function downloadSQL() {
+            const allSQL = Object.values(sqlContent).join('\n\n-- =====================\n\n');
+            const blob = new Blob([allSQL], { type: 'text/sql' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'iot_backend_schema.sql';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('SQL file downloaded!');
+        }
+    </script>
+</body>
+</html>

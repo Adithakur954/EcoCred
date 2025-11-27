@@ -1,0 +1,17 @@
+{
+  "name": "ecocred",
+  "version": "1.0.0",
+  "description": "A eco cred backend server",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node index.js"
+  },
+  "author": "Aditya Singh",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "pg": "^8.16.3"
+  }
+}
