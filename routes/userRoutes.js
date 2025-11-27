@@ -5,7 +5,9 @@ import {
   createUser,
   updateUser,
   deleteUser,
-  searchUsers
+  searchUsers,
+  getUserStats,
+  getUserWithDevices
 } from '../controllers/userController.js';
 import {
   validateCreateUser,
@@ -15,11 +17,17 @@ import {
 
 const router = express.Router();
 
-// GET all users
-router.get('/', getAllUsers);
+// GET user statistics
+router.get('/stats', getUserStats);
 
 // SEARCH users
 router.get('/search', searchUsers);
+
+// GET all users
+router.get('/', getAllUsers);
+
+// GET user with devices
+router.get('/:id/devices', validateId, getUserWithDevices);
 
 // GET user by ID
 router.get('/:id', validateId, getUserById);

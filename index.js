@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import pool, { connectWithRetry, getDBStatus } from './db.js';
 import userRoutes from './routes/userRoutes.js';
+import deviceRoutes from './routes/deviceRoutes.js';
 
 dotenv.config();
 
@@ -20,16 +21,17 @@ app.get('/', (req, res) => {
     status: 'running',
     endpoints: {
       users: '/api/users',
-      health: '/health',
-      dbStatus: '/health/db'
+      devices: '/api/devices',
+      deviceStats: '/api/devices/stats',
+      health: '/health'
     }
   });
 });
 
-// API Routes
 app.use('/api/users', userRoutes);
+app.use('/api/devices', deviceRoutes);
 
-// Health check - Simple
+// Health check
 app.get('/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
@@ -52,11 +54,7 @@ app.get('/health', async (req, res) => {
 app.get('/health/db', async (req, res) => {
   const status = await getDBStatus();
   const httpStatus = status.connected ? 200 : 500;
-  
-  res.status(httpStatus).json({
-    server: 'running',
-    ...status
-  });
+  res.status(httpStatus).json(status);
 });
 
 // 404 handler
@@ -68,27 +66,21 @@ app.use((req, res) => {
   });
 });
 
-// Global error handler
+// Error handler
 app.use((err, req, res, next) => {
-  console.error('Global error:', err.stack);
+  console.error('Error:', err.stack);
   res.status(500).json({
     success: false,
     message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    error: err.message
   });
 });
 
 // Graceful shutdown
 const shutdown = async () => {
-  console.log('\n🛑 Shutting down gracefully...');
-  
-  try {
-    await pool.end();
-    console.log('✅ Database pool closed');
-  } catch (error) {
-    console.error('❌ Error closing pool:', error.message);
-  }
-  
+  console.log('\n🛑 Shutting down...');
+  await pool.end();
+  console.log('✅ Database pool closed');
   process.exit(0);
 };
 
@@ -97,24 +89,19 @@ process.on('SIGTERM', shutdown);
 
 // Start server
 const startServer = async () => {
-  console.log('🚀 Starting EcoCred Server...\n');
-  
-  // Check database connection with retry
   const isConnected = await connectWithRetry(5, 3000);
   
   if (!isConnected) {
-    console.error('❌ Failed to connect to database. Server not started.');
     process.exit(1);
   }
   
-  console.log(''); // Empty line for better formatting
-  
   app.listen(PORT, () => {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📚 Users API: http://localhost:${PORT}/api/users`);
-    console.log(`💚 Health check: http://localhost:${PORT}/health`);
-    console.log(`📊 DB Status: http://localhost:${PORT}/health/db`);
+    console.log(`🚀 Server: http://localhost:${PORT}`);
+    console.log(`👥 Users: http://localhost:${PORT}/api/users`);
+    console.log(`📱 Devices: http://localhost:${PORT}/api/devices`);
+    console.log(`📊 Stats: http://localhost:${PORT}/api/devices/stats`);
+    console.log(`💚 Health: http://localhost:${PORT}/health`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   });
 };
