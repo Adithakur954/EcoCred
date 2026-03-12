@@ -6,6 +6,7 @@ import deviceRoutes from './routes/deviceRoutes.js';
 import usageRoutes from './routes/usageRoutes.js';
 import gamificationRoutes from './routes/gamificationRoutes.js';
 import tipsRoutes from './routes/tipsRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 dotenv.config();
 
 const app = express();
@@ -14,6 +15,15 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// CORS for mobile app
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
 
 // Routes
 app.get('/', (req, res) => {
@@ -32,6 +42,7 @@ app.get('/', (req, res) => {
   });
 });
 
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/devices', deviceRoutes);
 app.use('/api/usage', usageRoutes);
