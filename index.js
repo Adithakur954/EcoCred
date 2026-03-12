@@ -3,7 +3,9 @@ import dotenv from 'dotenv';
 import pool, { connectWithRetry, getDBStatus } from './db.js';
 import userRoutes from './routes/userRoutes.js';
 import deviceRoutes from './routes/deviceRoutes.js';
-
+import usageRoutes from './routes/usageRoutes.js';
+import gamificationRoutes from './routes/gamificationRoutes.js';
+import tipsRoutes from './routes/tipsRoutes.js';
 dotenv.config();
 
 const app = express();
@@ -16,13 +18,15 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.get('/', (req, res) => {
   res.json({
-    message: 'EcoCred API',
+    message: 'EcoGuard API',
     version: '1.0.0',
     status: 'running',
     endpoints: {
       users: '/api/users',
       devices: '/api/devices',
-      deviceStats: '/api/devices/stats',
+      usage: '/api/usage',
+      gamification: '/api/gamification',
+      tips: '/api/tips',
       health: '/health'
     }
   });
@@ -30,6 +34,9 @@ app.get('/', (req, res) => {
 
 app.use('/api/users', userRoutes);
 app.use('/api/devices', deviceRoutes);
+app.use('/api/usage', usageRoutes);
+app.use('/api/gamification', gamificationRoutes);
+app.use('/api/tips', tipsRoutes);
 
 // Health check
 app.get('/health', async (req, res) => {
@@ -90,11 +97,11 @@ process.on('SIGTERM', shutdown);
 // Start server
 const startServer = async () => {
   const isConnected = await connectWithRetry(5, 3000);
-  
+
   if (!isConnected) {
     process.exit(1);
   }
-  
+
   app.listen(PORT, () => {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`🚀 Server: http://localhost:${PORT}`);

@@ -1,7 +1,7 @@
 {
-  "name": "ecocred",
+  "name": "ecoguard",
   "version": "1.0.0",
-  "description": "A eco cred backend server",
+  "description": "A lightweight eco guard backend server for sustainable resource use",
   "main": "index.js",
   "type": "module",
   "scripts": {

@@ -1,0 +1,16 @@
+meta {
+  name: SingIn
+  type: http
+  seq: 2
+}
+
+get {
+  url: https://ecocred-pebe.onrender.com/api/users
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -11,14 +11,10 @@ const poolConfig = {
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
   connectionTimeoutMillis: 5000, // Return an error after 5 seconds if connection could not be established
+  ssl: {
+    rejectUnauthorized: false
+  }
 };
-
-// For production with SSL (uncomment if needed)
-// if (process.env.NODE_ENV === 'production') {
-//   poolConfig.ssl = {
-//     rejectUnauthorized: false
-//   };
-// }
 
 const pool = new Pool(poolConfig);
 
@@ -65,7 +61,7 @@ export const getDBStatus = async () => {
         inet_server_addr() as host,
         inet_server_port() as port
     `);
-    
+
     return {
       connected: true,
       timestamp: new Date().toISOString(),
@@ -91,12 +87,12 @@ export const getDBStatus = async () => {
 export const connectWithRetry = async (maxRetries = 5, delay = 3000) => {
   for (let i = 1; i <= maxRetries; i++) {
     console.log(`🔄 Database connection attempt ${i}/${maxRetries}...`);
-    
+
     const isConnected = await checkConnection();
-    
+
     if (isConnected) {
       console.log('✅ Database connected successfully!');
-      
+
       // Log connection info
       const status = await getDBStatus();
       if (status.connected) {
@@ -104,16 +100,16 @@ export const connectWithRetry = async (maxRetries = 5, delay = 3000) => {
         console.log(`👤 User: ${status.user}`);
         console.log(`🔢 Version: ${status.version}`);
       }
-      
+
       return true;
     }
-    
+
     if (i < maxRetries) {
       console.log(`⏳ Retrying in ${delay / 1000} seconds...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
-  
+
   console.error('❌ Failed to connect to database after all retries');
   return false;
 };

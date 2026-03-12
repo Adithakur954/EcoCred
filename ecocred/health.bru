@@ -4,12 +4,21 @@ meta {
   seq: 1
 }
 
-get {
-  url: https://ecocred-pebe.onrender.com/health/db
-  body: none
+post {
+  url: https://ecocred-pebe.onrender.com/api/users
+  body: json
   auth: inherit
+}
+
+body:json {
+  {
+     "name": "John Doe",
+      "email": "john@example.com",
+      "password": "password123"
+  }
 }
 
 settings {
   encodeUrl: true
+  timeout: 0
 }
