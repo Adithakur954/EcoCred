@@ -7,6 +7,7 @@ import usageRoutes from './routes/usageRoutes.js';
 import gamificationRoutes from './routes/gamificationRoutes.js';
 import tipsRoutes from './routes/tipsRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import datasetRoutes from './routes/datasetRoutes.js';
 dotenv.config();
 
 const app = express();
@@ -37,6 +38,7 @@ app.get('/', (req, res) => {
       usage: '/api/usage',
       gamification: '/api/gamification',
       tips: '/api/tips',
+      dataset: '/api/dataset',
       health: '/health'
     }
   });
@@ -48,6 +50,7 @@ app.use('/api/devices', deviceRoutes);
 app.use('/api/usage', usageRoutes);
 app.use('/api/gamification', gamificationRoutes);
 app.use('/api/tips', tipsRoutes);
+app.use('/api/dataset', datasetRoutes);
 
 // Health check
 app.get('/health', async (req, res) => {
