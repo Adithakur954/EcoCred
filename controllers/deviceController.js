@@ -362,8 +362,8 @@ export const updateDeviceStatus = async (req, res) => {
     
     const { rows } = await pool.query(
       `UPDATE devices 
-       SET status = $1,
-           last_active = CASE WHEN $1 = 'active' THEN NOW() ELSE last_active END,
+       SET status = $1::text,
+           last_active = CASE WHEN $1::text = 'active' THEN NOW() ELSE last_active END,
            updated_at = NOW()
        WHERE id = $2
        RETURNING *`,
@@ -556,8 +556,8 @@ export const bulkUpdateStatus = async (req, res) => {
     
     const { rows } = await pool.query(
       `UPDATE devices 
-       SET status = $1,
-           last_active = CASE WHEN $1 = 'active' THEN NOW() ELSE last_active END,
+       SET status = $1::text,
+           last_active = CASE WHEN $1::text = 'active' THEN NOW() ELSE last_active END,
            updated_at = NOW()
        WHERE id IN (${placeholders})
        RETURNING *`,

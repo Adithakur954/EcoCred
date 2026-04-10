@@ -25,11 +25,15 @@ const setupDatabase = async () => {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS devices (
         id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        type VARCHAR(100) NOT NULL,
+        device_name VARCHAR(255) NOT NULL,
+        device_type VARCHAR(100) NOT NULL,
+        device_id VARCHAR(100) UNIQUE,
         status VARCHAR(20) DEFAULT 'inactive',
+        location VARCHAR(255),
         user_id INT REFERENCES users(id) ON DELETE CASCADE,
-        created_at TIMESTAMP DEFAULT NOW()
+        last_active TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
       );
     `);
 
@@ -78,7 +82,8 @@ const setupDatabase = async () => {
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         description TEXT NOT NULL,
-        points_required INT DEFAULT 0
+        points_required INT DEFAULT 0,
+        icon_url TEXT
       );
     `);
 

@@ -4,10 +4,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const { Pool } = pg;
+const rawConnectionString = process.env.DATABASE_URL || '';
+const connectionString = rawConnectionString.replace(/sslmode=require/gi, 'sslmode=no-verify');
 
 // Configuration
 const poolConfig = {
-  connectionString: process.env.DATABASE_URL,
+  connectionString,
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
   connectionTimeoutMillis: 5000, // Return an error after 5 seconds if connection could not be established
@@ -83,6 +85,56 @@ export const getDBStatus = async () => {
   }
 };
 
+// Ensure schema stays compatible with current controllers/routes.
+export const ensureSchemaCompatibility = async () => {
+  // devices table: migrate legacy columns (name/type) to current schema.
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'devices' AND column_name = 'name'
+      ) AND NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'devices' AND column_name = 'device_name'
+      ) THEN
+        ALTER TABLE devices RENAME COLUMN name TO device_name;
+      END IF;
+
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'devices' AND column_name = 'type'
+      ) AND NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'devices' AND column_name = 'device_type'
+      ) THEN
+        ALTER TABLE devices RENAME COLUMN type TO device_type;
+      END IF;
+    END
+    $$;
+  `);
+
+  await pool.query(`
+    ALTER TABLE devices
+      ADD COLUMN IF NOT EXISTS device_name VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS device_type VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS device_id VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS location VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS last_active TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+  `);
+
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_devices_device_id_unique
+    ON devices(device_id);
+  `);
+
+  await pool.query(`
+    ALTER TABLE gamification_badges
+      ADD COLUMN IF NOT EXISTS icon_url TEXT;
+  `);
+};
+
 // Connect with retry logic
 export const connectWithRetry = async (maxRetries = 5, delay = 3000) => {
   for (let i = 1; i <= maxRetries; i++) {
@@ -100,6 +152,9 @@ export const connectWithRetry = async (maxRetries = 5, delay = 3000) => {
         console.log(`👤 User: ${status.user}`);
         console.log(`🔢 Version: ${status.version}`);
       }
+
+      await ensureSchemaCompatibility();
+      console.log('✅ Database schema compatibility check completed');
 
       return true;
     }
