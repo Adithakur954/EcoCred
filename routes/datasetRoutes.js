@@ -17,6 +17,11 @@ const rangeTrunc = (range) => {
   return range === '24h' ? 'hour' : 'day';
 };
 
+const toNumber = (value) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/dataset/summary
 // Returns overall averages: avgUse, avgGen, avgSolar, netBalance
@@ -35,7 +40,18 @@ router.get('/summary', async (req, res) => {
       FROM energy_readings
       WHERE use_kw IS NOT NULL
     `);
-    res.json({ success: true, data: result.rows[0] });
+    const row = result.rows[0];
+    res.json({
+      success: true,
+      data: {
+        ...row,
+        avgUse: toNumber(row.avgUse),
+        avgGen: toNumber(row.avgGen),
+        avgSolar: toNumber(row.avgSolar),
+        netBalance: toNumber(row.netBalance),
+        totalReadings: toNumber(row.totalReadings),
+      },
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -157,7 +173,21 @@ router.get('/weather', async (req, res) => {
       FROM energy_readings
       WHERE temperature IS NOT NULL
     `);
-    res.json({ success: true, data: result.rows[0] });
+    const row = result.rows[0];
+    res.json({
+      success: true,
+      data: {
+        ...row,
+        avgTemp: toNumber(row.avgTemp),
+        avgHumidity: toNumber(row.avgHumidity),
+        avgWindSpeed: toNumber(row.avgWindSpeed),
+        avgCloudCover: toNumber(row.avgCloudCover),
+        avgDewPoint: toNumber(row.avgDewPoint),
+        avgPressure: toNumber(row.avgPressure),
+        avgApparentTemp: toNumber(row.avgApparentTemp),
+        avgPrecipProb: toNumber(row.avgPrecipProb),
+      },
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

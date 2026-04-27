@@ -1,4 +1,5 @@
 import pool from '../db.js';
+import { awardEligibleBadges } from '../utils/demoSeed.js';
 
 // POST /api/usage
 // Log an event for electricity or water consumption
@@ -23,19 +24,32 @@ export const logUsageEvent = async (req, res) => {
             [user_id, device_id || null, resource_type, amount, eventTime]
         );
 
-        // Gamification Hook: Award points for tracking
-        // Give 5 points for every logging event (can be optimized based on rules)
+        const userStatus = await pool.query(
+            'SELECT last_active_date FROM users WHERE id = $1',
+            [user_id]
+        );
+        const lastActiveDate = userStatus.rows[0]?.last_active_date
+            ? new Date(userStatus.rows[0].last_active_date).toISOString().slice(0, 10)
+            : null;
+        const today = new Date().toISOString().slice(0, 10);
+
         await pool.query(
             `UPDATE users 
        SET points = points + 5,
+           streak_days = CASE
+             WHEN last_active_date IS NULL THEN 1
+             WHEN last_active_date < CURRENT_DATE THEN streak_days + 1
+             ELSE streak_days
+           END,
            last_active_date = CURRENT_DATE
        WHERE id = $1`,
             [user_id]
         );
+        await awardEligibleBadges(pool, user_id);
 
         res.status(201).json({
             success: true,
-            message: 'Usage logged successfully. Earned 5 EcoPoints!',
+            message: `Usage logged successfully. Earned 5 EcoPoints${lastActiveDate !== today ? ' and continued your streak' : ''}!`,
             data: rows[0]
         });
     } catch (error) {
@@ -77,15 +91,72 @@ export const getUsageSummary = async (req, res) => {
             [userId]
         );
 
+        const lastWeekResult = await pool.query(
+            `SELECT resource_type, SUM(amount) as total
+       FROM usage_events
+       WHERE user_id = $1
+         AND timestamp >= CURRENT_DATE - INTERVAL '14 days'
+         AND timestamp < CURRENT_DATE - INTERVAL '7 days'
+       GROUP BY resource_type`,
+            [userId]
+        );
+
+        const recommendations = buildRecommendations(currentWeekResult.rows, lastWeekResult.rows);
+
         res.status(200).json({
             success: true,
             data: {
                 trends: rows,
-                currentWeek: currentWeekResult.rows
+                currentWeek: currentWeekResult.rows,
+                lastWeek: lastWeekResult.rows,
+                recommendations
             }
         });
     } catch (error) {
         console.error('Error in getUsageSummary:', error.message);
         res.status(500).json({ success: false, message: 'Server error', error: error.message });
     }
+};
+
+const getTotal = (rows, type) => {
+    const row = rows.find(item => item.resource_type === type);
+    return row ? parseFloat(row.total) : 0;
+};
+
+const buildRecommendations = (currentWeek, lastWeek) => {
+    const recommendations = [];
+    const currentElectricity = getTotal(currentWeek, 'electricity');
+    const previousElectricity = getTotal(lastWeek, 'electricity');
+    const currentWater = getTotal(currentWeek, 'water');
+    const previousWater = getTotal(lastWeek, 'water');
+
+    if (previousElectricity > 0 && currentElectricity > previousElectricity) {
+        recommendations.push({
+            type: 'electricity',
+            title: 'Electricity rose this week',
+            message: 'Try shifting heavy appliance use away from evening peak hours and unplug standby devices.'
+        });
+    } else {
+        recommendations.push({
+            type: 'electricity',
+            title: 'Electricity trend is under control',
+            message: 'Keep using natural light and continue tracking high-load appliances.'
+        });
+    }
+
+    if (previousWater > 0 && currentWater > previousWater) {
+        recommendations.push({
+            type: 'water',
+            title: 'Water usage increased',
+            message: 'Check taps and shower duration; small leaks can create a large weekly jump.'
+        });
+    } else {
+        recommendations.push({
+            type: 'water',
+            title: 'Water saving habit is building',
+            message: 'Keep logging usage and reuse rinse water for plants when possible.'
+        });
+    }
+
+    return recommendations;
 };

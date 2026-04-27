@@ -1,5 +1,4 @@
 import express from 'express';
-import dotenv from 'dotenv';
 import pool, { connectWithRetry, getDBStatus } from './db.js';
 import userRoutes from './routes/userRoutes.js';
 import deviceRoutes from './routes/deviceRoutes.js';
@@ -8,7 +7,6 @@ import gamificationRoutes from './routes/gamificationRoutes.js';
 import tipsRoutes from './routes/tipsRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import datasetRoutes from './routes/datasetRoutes.js';
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;

@@ -1,6 +1,7 @@
 import pool from '../db.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { seedStarterDataForUser } from '../utils/demoSeed.js';
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -31,6 +32,10 @@ export const register = async (req, res) => {
     );
 
     const user = rows[0];
+    if (process.env.SEED_NEW_USERS !== 'false') {
+      await seedStarterDataForUser(pool, user.id);
+    }
+
     const token = generateToken(user.id);
 
     res.status(201).json({

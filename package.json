@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "node index.js",
-    "start": "node index.js"
+    "start": "node index.js",
+    "setup": "node setup_db.js",
+    "seed:demo": "node seed_paper_demo.js"
   },
   "author": "Aditya Singh",
   "license": "ISC",

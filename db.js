@@ -7,16 +7,24 @@ const { Pool } = pg;
 const rawConnectionString = process.env.DATABASE_URL || '';
 const connectionString = rawConnectionString.replace(/sslmode=require/gi, 'sslmode=no-verify');
 
+const sslMode = (process.env.DB_SSL || process.env.PGSSLMODE || '').toLowerCase();
+const shouldUseSSL = ['true', '1', 'require', 'no-verify'].includes(sslMode);
+
 // Configuration
 const poolConfig = {
   connectionString,
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
   connectionTimeoutMillis: 5000, // Return an error after 5 seconds if connection could not be established
-  ssl: {
-    rejectUnauthorized: false
-  }
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 10000
 };
+
+if (shouldUseSSL) {
+  poolConfig.ssl = {
+    rejectUnauthorized: false
+  };
+}
 
 const pool = new Pool(poolConfig);
 
@@ -35,8 +43,22 @@ pool.on('remove', (client) => {
 
 pool.on('error', (err, client) => {
   console.error('❌ Unexpected error on idle client:', err.message);
-  process.exit(-1);
 });
+
+const keepAliveIntervalMs = Number(process.env.DB_KEEPALIVE_INTERVAL_MS || 240000);
+
+if (keepAliveIntervalMs > 0) {
+  const keepAliveTimer = setInterval(async () => {
+    try {
+      await pool.query('SELECT 1');
+      console.log('Database keep-alive ping successful');
+    } catch (error) {
+      console.error('Database keep-alive ping failed:', error.message);
+    }
+  }, keepAliveIntervalMs);
+
+  keepAliveTimer.unref();
+}
 
 // Simple connection check
 export const checkConnection = async () => {

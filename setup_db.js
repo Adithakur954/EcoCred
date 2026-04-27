@@ -27,15 +27,47 @@ const setupDatabase = async () => {
         id SERIAL PRIMARY KEY,
         device_name VARCHAR(255) NOT NULL,
         device_type VARCHAR(100) NOT NULL,
-        device_id VARCHAR(100) UNIQUE,
+        device_id VARCHAR(100) UNIQUE NOT NULL,
         status VARCHAR(20) DEFAULT 'inactive',
         location VARCHAR(255),
         user_id INT REFERENCES users(id) ON DELETE CASCADE,
-        last_active TIMESTAMP,
+        last_active TIMESTAMP DEFAULT NOW(),
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
     `);
+
+    await pool.query(`ALTER TABLE devices ADD COLUMN IF NOT EXISTS device_name VARCHAR(255);`);
+    await pool.query(`ALTER TABLE devices ADD COLUMN IF NOT EXISTS device_type VARCHAR(100);`);
+    await pool.query(`ALTER TABLE devices ADD COLUMN IF NOT EXISTS device_id VARCHAR(100);`);
+    await pool.query(`ALTER TABLE devices ADD COLUMN IF NOT EXISTS location VARCHAR(255);`);
+    await pool.query(`ALTER TABLE devices ADD COLUMN IF NOT EXISTS last_active TIMESTAMP DEFAULT NOW();`);
+    await pool.query(`ALTER TABLE devices ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();`);
+    await pool.query(`UPDATE devices SET device_name = COALESCE(device_name, name, 'Home Device') WHERE device_name IS NULL;`);
+    await pool.query(`UPDATE devices SET device_type = COALESCE(device_type, type, 'appliance') WHERE device_type IS NULL;`);
+    await pool.query(`UPDATE devices SET device_id = COALESCE(device_id, 'legacy-' || id::text) WHERE device_id IS NULL;`);
+    await pool.query(`
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'devices' AND column_name = 'name'
+        ) THEN
+          ALTER TABLE devices ALTER COLUMN name DROP NOT NULL;
+        END IF;
+
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'devices' AND column_name = 'type'
+        ) THEN
+          ALTER TABLE devices ALTER COLUMN type DROP NOT NULL;
+        END IF;
+      END $$;
+    `);
+    await pool.query(`ALTER TABLE devices ALTER COLUMN device_name SET NOT NULL;`);
+    await pool.query(`ALTER TABLE devices ALTER COLUMN device_type SET NOT NULL;`);
+    await pool.query(`ALTER TABLE devices ALTER COLUMN device_id SET NOT NULL;`);
+    await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS devices_device_id_unique ON devices(device_id);`);
 
     // 3. Create Usage Events Table
     console.log('Creating usage_events table...');
@@ -82,10 +114,11 @@ const setupDatabase = async () => {
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         description TEXT NOT NULL,
-        points_required INT DEFAULT 0,
-        icon_url TEXT
+        icon_url VARCHAR(255),
+        points_required INT DEFAULT 0
       );
     `);
+    await pool.query(`ALTER TABLE gamification_badges ADD COLUMN IF NOT EXISTS icon_url VARCHAR(255);`);
 
     // 7. Insert default badges
     const badgesCount = await pool.query('SELECT count(*) FROM gamification_badges');
