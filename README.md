@@ -1,191 +1,255 @@
-# EcoGuard API Documentation
+# EcoCred
 
-This directory contains the Express.js API designed for the EcoGuard software-based smart home system. It provides lightweight, event-driven tracking of electricity and water usage, coupled with a gamification and eco-tip system to foster sustainable behavior.
+EcoCred is a full-stack sustainability tracking platform with:
+- `EcoCred/`: Node.js + Express + PostgreSQL backend API
+- `EcoCredApp/`: React Native (Expo-enabled) mobile app
 
-## Base URL
-`http://localhost:3000` (or your deployed server URL)
+It helps users log electricity/water usage, manage devices, view trends, earn points/badges, and explore dataset-based analytics.
 
----
+## Project Structure
 
-## 1. Usage Logging & Analytics API
-*Focused on logging events and providing interpretable summaries.*
-
-### Log Usage Event
-**POST** `/api/usage`
-Logs an electricity or water consumption event. Awards the user 5 EcoPoints automatically per event as a gamification nudge.
-
-**Request Body (JSON):**
-```json
-{
-  "user_id": 1,               // Required
-  "device_id": 2,             // Optional
-  "resource_type": "electricity", // Required: "electricity" or "water"
-  "amount": 2.5,              // Required: Decimal (kWh for electricity, Liters for water)
-  "timestamp": "2023-11-20T10:00:00Z" // Optional, defaults to current time
-}
+```text
+Eco/
+|- EcoCred/                 # Backend API + DB scripts
+|  |- controllers/
+|  |- middleware/
+|  |- routes/
+|  |- utils/
+|  |- index.js
+|  |- db.js
+|  |- setup_db.js
+|  |- setup_energy_table.js
+|  |- import_csv.js
+|  \- seed_paper_demo.js
+\- EcoCredApp/              # React Native app
+   |- src/
+   |  |- screens/
+   |  |- services/api.js
+   |  |- context/AuthContext.js
+   |  \- navigation/AppNavigator.js
+   \- App.js
 ```
 
-**Response (201 Created):**
-```json
-{
-  "success": true,
-  "message": "Usage logged successfully. Earned 5 EcoPoints!",
-  "data": {
-    "id": 10,
-    "user_id": 1,
-    "device_id": 2,
-    "resource_type": "electricity",
-    "amount": "2.50",
-    "timestamp": "2023-11-20T10:00:00.000Z"
-  }
-}
+## Features
+
+- JWT-based auth (register, login, current user, password update)
+- User CRUD + search
+- Device CRUD + status tracking + filters + stats
+- Usage event logging + summary
+- Gamification leaderboard + user badge/points status
+- Eco tips endpoint with optional category filter
+- Dataset analytics endpoints for summary, time series, appliances, weather
+- Mobile app with auth flow and 7 main tabs:
+  Home, Usage, Devices, Gamification, Tips, Analysis, Profile
+
+## Tech Stack
+
+### Backend (`EcoCred`)
+- Node.js (ESM)
+- Express 5
+- PostgreSQL (`pg`)
+- JWT (`jsonwebtoken`)
+- Password hashing (`bcrypt`)
+
+### Mobile (`EcoCredApp`)
+- React Native 0.81
+- Expo SDK 54 (plus native Android folder)
+- React Navigation
+- Axios
+- AsyncStorage
+
+## Prerequisites
+
+- Node.js 18+
+- npm 9+
+- PostgreSQL 13+
+- For mobile Android testing:
+  - Android Studio + SDK/emulator
+  - OR a physical Android device
+
+## Environment Variables
+
+### Backend: `EcoCred/.env`
+Copy from `EcoCred/.env.example` and set:
+
+```env
+PORT=3000
+DATABASE_URL=postgres://USER:PASSWORD@HOST:PORT/DBNAME?sslmode=require
+JWT_SECRET=replace_with_a_strong_secret
+JWT_EXPIRE=7d
 ```
 
-### Get Usage Summary
-**GET** `/api/usage/summary/:userId`
-Retrieves aggregated resource usage trends over the last 7 days grouped by date, serving as an interpretable dataset for mobile chart visualization.
+Optional DB SSL controls (used in `db.js`):
+- `DB_SSL=true` (or `1` / `require` / `no-verify`)
+- `PGSSLMODE=require`
+- `DB_KEEPALIVE_INTERVAL_MS=240000`
 
-**Response (200 OK):**
-```json
-{
-  "success": true,
-  "data": {
-    "trends": [
-      {
-        "resource_type": "electricity",
-        "usage_date": "2023-11-20T00:00:00.000Z",
-        "total_amount": "5.2"
-      }
-    ],
-    "currentWeek": [
-      {
-        "resource_type": "electricity",
-        "total": "45.5"
-      }
-    ]
-  }
-}
+### Mobile: `EcoCredApp/.env`
+Copy from `EcoCredApp/.env.example` and set:
+
+```env
+EXPO_PUBLIC_API_BASE_URL=http://YOUR_LOCAL_IP:3000
 ```
 
----
+Notes:
+- On Android emulator, `http://10.0.2.2:3000` can be used for local backend.
+- If unset, app falls back to deployed URL hardcoded in `src/services/api.js`.
 
-## 2. Gamification API
-*Handles leaderboards, points, and achievement badges to incentivize sustainable behaviors.*
+## Installation
 
-### Get Leaderboard
-**GET** `/api/gamification/leaderboard`
-Fetches the top 10 users ranked by total EcoPoints and streak days.
+### 1) Install backend dependencies
 
-**Response (200 OK):**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "name": "Jane Doe",
-      "points": 150,
-      "streak_days": 5
-    }
-  ]
-}
+```bash
+cd EcoCred
+npm install
 ```
 
-### Get User Gamification Status
-**GET** `/api/gamification/status/:userId`
-Fetches a user's total points, streaks, and all earned badges.
+### 2) Install mobile dependencies
 
-**Response (200 OK):**
-```json
-{
-  "success": true,
-  "data": {
-    "user": {
-      "id": 1,
-      "name": "Jane Doe",
-      "points": 150,
-      "streak_days": 5,
-      "last_active_date": "2023-11-20"
-    },
-    "badges": [
-      {
-        "id": 2,
-        "name": "Eco Starter",
-        "description": "Logged your first resource usage.",
-        "icon_url": null,
-        "earned_at": "2023-11-15T12:00:00.000Z"
-      }
-    ]
-  }
-}
+```bash
+cd ../EcoCredApp
+npm install
 ```
 
----
+## Database Setup
 
-## 3. Eco-Tips API
-*Delivers randomized contextual tips directly to the mobile UI.*
+Run from `EcoCred/`:
 
-### Get Eco-Tips
-**GET** `/api/tips`
-Fetches up to 5 randomized eco-friendly recommendations. 
-
-**Query Parameters:**
-- `category` (optional): Filter tips by `"electricity"`, `"water"`, or `"general"`. E.g., `/api/tips?category=electricity`
-
-**Response (200 OK):**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "title": "Unplug Appliances",
-      "description": "Vampire power can account for up to 10% of your energy bill...",
-      "category": "electricity"
-    }
-  ]
-}
+```bash
+npm run setup
 ```
 
----
+This creates core tables (`users`, `devices`, `usage_events`, `eco_tips`, `gamification_badges`, `user_badges`) and inserts default tips/badges.
 
-## 4. User Management API
-*Base EcoCred CRUD operations.*
+### Optional: dataset table
 
-### Get All Users
-**GET** `/api/users`
-**Response:** Array of user objects.
+```bash
+node setup_energy_table.js
+```
 
-### Get User by ID
-**GET** `/api/users/:id`
-**Response:** Single user object.
+### Optional: import CSV dataset
 
-### Create User
-**POST** `/api/users`
-**Request Body:** `name`, `email`, `password`
+```bash
+node import_csv.js "D:\path\to\HomeC.csv"
+```
 
-### Update User
-**PUT** `/api/users/:id`
-**Request Body:** `name`, `email`
+### Optional: seed demo data for paper/demo mode
 
-### Delete User
-**DELETE** `/api/users/:id`
+```bash
+npm run seed:demo
+```
 
----
+Demo login generated by seed:
+- `aditya.demo@ecoguard.local`
+- `password123`
 
-## 5. Device Management API
-*Base EcoCred CRUD operations.*
+## Running the Project
 
-### Get All Devices
-**GET** `/api/devices`
+### Start backend
 
-### Create Device
-**POST** `/api/devices`
-**Request Body:** `device_name`, `device_type`, `device_id`, `status` (`active`, `inactive`, etc.), `location`, `user_id`
+```bash
+cd EcoCred
+npm run dev
+```
 
-### Update Device
-**PUT** `/api/devices/:id`
-**Request Body:** Any subset of fields to update
+API base: `http://localhost:3000`
+Health checks:
+- `GET /health`
+- `GET /health/db`
 
-### Delete Device
-**DELETE** `/api/devices/:id`
+### Start mobile app
+
+```bash
+cd EcoCredApp
+npm run expo:start
+```
+
+Then:
+- press `a` for Android emulator, or
+- scan QR in Expo Go (if compatible), or
+- use `npm run android` for native Android launch.
+
+## API Overview
+
+Base URL: `http://localhost:3000`
+
+### Auth
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me` (Bearer token)
+- `PUT /api/auth/updatepassword` (Bearer token)
+- `POST /api/auth/logout` (Bearer token)
+
+### Users
+- `GET /api/users`
+- `GET /api/users/search?query=...`
+- `GET /api/users/:id`
+- `POST /api/users`
+- `PUT /api/users/:id`
+- `DELETE /api/users/:id`
+
+### Devices
+- `GET /api/devices`
+- `GET /api/devices/stats`
+- `GET /api/devices/search?query=...`
+- `GET /api/devices/status/:status`
+- `GET /api/devices/user/:userId`
+- `GET /api/devices/:id`
+- `POST /api/devices`
+- `PUT /api/devices/:id`
+- `PATCH /api/devices/:id/status`
+- `DELETE /api/devices/:id`
+
+### Usage
+- `POST /api/usage`
+- `GET /api/usage/summary/:userId`
+
+### Gamification
+- `GET /api/gamification/leaderboard`
+- `GET /api/gamification/status/:userId`
+
+### Tips
+- `GET /api/tips`
+- `GET /api/tips?category=electricity|water|general`
+
+### Dataset
+- `GET /api/dataset/summary`
+- `GET /api/dataset/timeseries?range=24h|7d|30d`
+- `GET /api/dataset/appliances`
+- `GET /api/dataset/weather`
+
+## API Testing
+
+Bruno collection files are available in:
+- `EcoCred/ecocred/`
+
+Import that folder into Bruno to quickly test endpoints.
+
+## Common Issues
+
+- App cannot reach local API:
+  - Set `EXPO_PUBLIC_API_BASE_URL` to your machine LAN IP (not `localhost`) when using physical device.
+- DB connection failures:
+  - Verify `DATABASE_URL` and SSL settings (`DB_SSL`, `PGSSLMODE`).
+- Unauthorized requests:
+  - Login first; app stores token in AsyncStorage key `ecocred_token`.
+
+## Scripts Reference
+
+### Backend (`EcoCred/package.json`)
+- `npm run dev` -> start API server
+- `npm run start` -> start API server
+- `npm run setup` -> create/initialize core DB schema
+- `npm run seed:demo` -> seed demo data
+
+### Mobile (`EcoCredApp/package.json`)
+- `npm run start` -> Metro bundler
+- `npm run expo:start` -> Expo start
+- `npm run android` -> run Android app
+- `npm run android:release` -> build Android release APK/AAB via Gradle
+- `npm run ios` -> run iOS app (macOS only)
+- `npm run web` -> Expo web target
+
+## License
+
+ISC
